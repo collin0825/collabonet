@@ -9,6 +9,7 @@ import numpy as np
 from collections import OrderedDict # for OrderedDict()
 
 import tensorflow as tf
+#import tensorflow.compat.v1 as tf
 from tensorflow.python.ops import rnn
 from tensorboard.plugins import projector
 
@@ -150,14 +151,14 @@ if __name__ == '__main__':
                         ID2wordVecIdx=ID2wordVecIdx, ID2char=ID2char, 
                         expName=expName, m_name=modelDict[dataSet]['m_name'], m_train=m_train, m_dev=m_dev, m_test=m_test)
 
-    with tf.Session(config=gpu_config) as sess:
+    with tf.compat.v1.Session(config=gpu_config) as sess:
         phase = 0
         random.seed(seedV)
         np.random.seed(seedV)
         tf.random.set_seed(seedV)
-        sess.run(tf.global_variables_initializer())
-        saver = tf.train.Saver(max_to_keep=10000)
-        loader = tf.train.Saver(max_to_keep=10000)
+        sess.run(tf.compat.v1.global_variables_initializer())
+        #saver = tf.compat.v1.train.Saver(max_to_keep=10000)
+        #loader = tf.compat.v1.train.Saver(max_to_keep=10000)
         for epoch_idx in range(args.epoch*len(dataNames)):
             dataSet = dataNames[epoch_idx%len(dataNames)]
             if epoch_idx%len(dataNames)==0:
@@ -194,14 +195,15 @@ if __name__ == '__main__':
                         continue
                     else:
                         loadpath = './modelSave/'+str(args.pretrained)+'/'+d_sub+'/'
-                        loader.restore(sess, tf.train.latest_checkpoint(loadpath))
+                        loader = tf.compat.v1.train.Saver(max_to_keep=10000)
+                        loader.restore(sess, tf.compat.v1.train.latest_checkpoint(loadpath))
 
                         intOuts[m_train].append(modelDict[d_sub]['runner'].info1epoch(m_train, modelDict[dataSet]['runner'], sess))
                         intOuts[m_dev].append(modelDict[d_sub]['runner'].info1epoch(m_dev, modelDict[dataSet]['runner'], sess))
                         intOuts[m_test].append(modelDict[d_sub]['runner'].info1epoch(m_test, modelDict[dataSet]['runner'], sess))
                 
                 loadpath = './modelSave/'+str(args.pretrained)+'/'+dataSet+'/'
-                loader.restore(sess, tf.train.latest_checkpoint(loadpath))
+                loader.restore(sess, tf.compat.v1.train.latest_checkpoint(loadpath))
             
             elif ((epoch_idx / len(dataNames)) != 0):
                 if args.pretrained != 0:
@@ -214,13 +216,13 @@ if __name__ == '__main__':
                             continue
                         else:
                             loadpath = './modelSave/'+expName+'/'+d_sub+'/'
-                            loader.restore(sess, tf.train.latest_checkpoint(loadpath))
+                            loader.restore(sess, tf.compat.v1.train.latest_checkpoint(loadpath))
                             intOuts[m_train].append(modelDict[d_sub]['runner'].info1epoch(m_train, modelDict[dataSet]['runner'], sess))
                             intOuts[m_dev].append(modelDict[d_sub]['runner'].info1epoch(m_dev, modelDict[dataSet]['runner'], sess))
                             intOuts[m_test].append(modelDict[d_sub]['runner'].info1epoch(m_test, modelDict[dataSet]['runner'], sess))
                     
                 loadpath = './modelSave/'+expName+'/'+dataSet+'/'
-                loader.restore(sess, tf.train.latest_checkpoint(loadpath))
+                loader.restore(sess, tf.compat.v1.train.latest_checkpoint(loadpath))
             
             (l, sl, tra, trsPara) = modelDict[dataSet]['runner'].train1epoch(
                                                                 sess, batch_idx, infoInput=intOuts, tbWriter=tbWriter)
@@ -232,6 +234,7 @@ if __name__ == '__main__':
              test_x, test_ans, test_len) = modelDict[dataSet]['runner'].dev1epoch(m_test, trsPara, sess, infoInput=intOuts, epoch=epoch_idx)
 
             modelDict[dataSet]['f1ValList'].append(t_prfValResult[2])
+            saver = tf.compat.v1.train.Saver(max_to_keep=10000)  
             saver.save(sess, './modelSave/'+expName+'/'+m_name+'/modelSaved')
             pickle.dump(trsPara, open('./modelSave/'+expName+'/'+m_name+'/trs_param.pickle','wb'))
             
@@ -257,17 +260,18 @@ if __name__ == '__main__':
            
             if esFlag:
                 break
+          
                 
     # Get test result for each model
     for dataSet in modelDict:
         m_name = modelDict[dataSet]['args'].guidee_data
         print('===='+m_name.upper()+"_MODEL Test=====")
-        with tf.Session(config=gpu_config) as sess:
+        with tf.compat.v1.Session(config=gpu_config) as sess:
             random.seed(seedV)
             np.random.seed(seedV)
             tf.random.set_seed(seedV)
-            sess.run(tf.global_variables_initializer())
-            loader = tf.train.Saver(max_to_keep=10000)
+            sess.run(tf.compat.v1.global_variables_initializer())
+            loader = tf.compat.v1.train.Saver(max_to_keep=10000)
             loadpath = './modelSave/'+expName+'/'+m_name+'/'
             
             if args.pretrained != 0:
@@ -277,7 +281,7 @@ if __name__ == '__main__':
                 intOuts = None
 
             trsPara = pickle.load(open(loadpath+'trs_param.pickle','rb'))
-            loader.restore(sess, tf.train.latest_checkpoint(loadpath)) 
+            loader.restore(sess, tf.compat.v1.train.latest_checkpoint(loadpath)) 
             
             if modelDict[dataSet]['args'].tensorboard:
                 tbWriter = tf.summary.FileWriter('test')

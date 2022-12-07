@@ -14,7 +14,7 @@ def wiki_wordVecProcessing(word2ID, word2IDTD):
     ID2wordVecIdx=dict()
     i = 1
     for key in word2ID:
-        if wordVec2LineNo.has_key(key):
+        if key in wordVec2LineNo:#wordVec2LineNo.has_key(key):
             ID2wordVecIdx[word2ID[key]]=wordVec2LineNo[key] # inp : word ID -> word Line No
         else: #UNK
             if isNum(key):
@@ -28,15 +28,15 @@ def wiki_loadWordVec(path,vocaPath="wordvec/vocab.txt"):
     vectList=list()
     
     vectList.append(np.array([0]*200)) #pad 
-    with open(path,'rb') as vecFile:
+    with open(path,'r') as vecFile:#rb
         for line in vecFile:
             vecValRow=line.split()
             vect=map(float, vecValRow)
             vectList.append(vect)
     vectList.append(np.random.rand(200))#UNK
-    wordVecArrayTmp=np.asarray(vectList,dtype='float32')
+    wordVecArrayTmp=np.asarray(vectList,dtype='object')#float32
     
-    with open(vocaPath,'rb') as vocaFile:
+    with open(vocaPath,'r') as vocaFile:#rb
         for itera, line in enumerate(vocaFile):
             wordVec2LineNo[line.strip('\n')]=itera+1 #pad
     
