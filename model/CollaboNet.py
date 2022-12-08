@@ -1,4 +1,5 @@
 import tensorflow as tf
+#import tensorflow.compat.v1 as tf
 import numpy as np
 from copy import deepcopy
 
@@ -10,24 +11,33 @@ from ops.embeddingOps import *
 from ops.inputData import *
 from model.sublayerFC import *
 
+import tensorflow_addons as tfa 
+
+# placeholders are not executable immediately so we need to disable eager exicution in TF 2 not in 1
+tf.compat.v1.disable_eager_execution()
+ 
+# # Create Placeholder
+#a = tf.compat.v1.placeholder(dtype=tf.float32, shape=(400,400))
+
 class Model:
     def __init__(self, args, wordEmbedding, seed):
+        #tf.disable_v2_behavior()
         self.wordEmbedding = wordEmbedding
-        self.X = tf.placeholder(tf.int32, [None, None], 'X')
-        self.X_len = tf.placeholder(tf.int32, [None], 'X_len')
-        self.X_char = tf.placeholder(tf.int32, [None, None, None], 'X_char')
-        self.X_char_len = tf.placeholder(tf.int32, [None, None], 'X_char_len')
-        self.maxLen = tf.placeholder(tf.int32, name='maxLen')
-        self.lr = tf.placeholder(tf.float32, name='lr')        
-        self.Y = tf.placeholder(tf.int32, [None, None], 'Y')
-        self.infos  = tf.placeholder(tf.float32, [None, None, args.hidden_size*2], 'infos') # not use
-        self.infos1 = tf.placeholder(tf.float32, [None, None, args.hidden_size*2], 'infos1')
-        self.infos2 = tf.placeholder(tf.float32, [None, None, args.hidden_size*2], 'infos2')
-        self.infos3 = tf.placeholder(tf.float32, [None, None, args.hidden_size*2], 'infos3')
-        self.infos4 = tf.placeholder(tf.float32, [None, None, args.hidden_size*2], 'infos4')
-        self.infos5 = tf.placeholder(tf.float32, [None, None, args.hidden_size*2], 'infos5')
-        self.emb_dropout = tf.placeholder(tf.float32, name='emb_dropout')
-        self.lstm_dropout = tf.placeholder(tf.float32, name='lstm_dropout')
+        self.X = tf.compat.v1.placeholder(tf.int32, [None, None], 'X')
+        self.X_len = tf.compat.v1.placeholder(tf.int32, [None], 'X_len')
+        self.X_char = tf.compat.v1.placeholder(tf.int32, [None, None, None], 'X_char')
+        self.X_char_len = tf.compat.v1.placeholder(tf.int32, [None, None], 'X_char_len')
+        self.maxLen = tf.compat.v1.placeholder(tf.int32, name='maxLen')
+        self.lr = tf.compat.v1.placeholder(tf.float32, name='lr')        
+        self.Y = tf.compat.v1.placeholder(tf.int32, [None, None], 'Y')
+        self.infos  = tf.compat.v1.placeholder(tf.float32, [None, None, args.hidden_size*2], 'infos') # not use
+        self.infos1 = tf.compat.v1.placeholder(tf.float32, [None, None, args.hidden_size*2], 'infos1')
+        self.infos2 = tf.compat.v1.placeholder(tf.float32, [None, None, args.hidden_size*2], 'infos2')
+        self.infos3 = tf.compat.v1.placeholder(tf.float32, [None, None, args.hidden_size*2], 'infos3')
+        self.infos4 = tf.compat.v1.placeholder(tf.float32, [None, None, args.hidden_size*2], 'infos4')
+        self.infos5 = tf.compat.v1.placeholder(tf.float32, [None, None, args.hidden_size*2], 'infos5')
+        self.emb_dropout = tf.compat.v1.placeholder(tf.float32, name='emb_dropout')
+        self.lstm_dropout = tf.compat.v1.placeholder(tf.float32, name='lstm_dropout')
         self.seed=seed
 
     def setArgs(self, args):
@@ -48,14 +58,14 @@ class Model:
         X_char_embedded_data = X_char_embedded_data_temp 
             
         if args.clwe_method == 'biLSTM':
-            with tf.variable_scope(args.guidee_data+'clwe_bi-LSTM'):        
+            with tf.compat.v1.variable_scope(args.guidee_data+'clwe_bi-LSTM'):
                 temp_char_emb = tf.reshape(X_char_embedded_data, [-1, args.char_maxlen, args.ce_dim], name='temp_char_emb')
                 temp_char_len = tf.reshape(self.X_char_len, [-1], name='temp_char_len')
-                self.ce_cell_fw = tf.contrib.rnn.BasicLSTMCell(num_units=args.clwe_dim, 
+                self.ce_cell_fw = tf.compat.v1.nn.rnn_cell.BasicLSTMCell(num_units=args.clwe_dim, 
                                                                 state_is_tuple=True)
-                self.ce_cell_bw = tf.contrib.rnn.BasicLSTMCell(num_units=args.clwe_dim, 
+                self.ce_cell_bw = tf.compat.v1.nn.rnn_cell.BasicLSTMCell(num_units=args.clwe_dim, 
                                                                 state_is_tuple=True)
-                self.ce_outputs, self.ce_states = tf.nn.bidirectional_dynamic_rnn(
+                self.ce_outputs, self.ce_states = tf.compat.v1.nn.bidirectional_dynamic_rnn(
                                                         self.ce_cell_fw, self.ce_cell_bw,
                                                         temp_char_emb,
                                                         sequence_length=temp_char_len,
@@ -66,12 +76,12 @@ class Model:
         elif args.clwe_method == 'CNN':
             filter_size = [3,5,7] 
             temp = list()
-            with tf.variable_scope(args.guidee_data+"CLWE_CNN"):
+            with tf.compat.v1.variable_scope(args.guidee_data+"CLWE_CNN"):
                 for fs in filter_size:  
-                    with tf.variable_scope("clwe_CNN-%s" % fs):
+                    with tf.compat.v1.variable_scope("clwe_CNN-%s" % fs):
                         filter_shape = [1, fs, args.ce_dim, args.clwe_dim]
-                        W = tf.get_variable(initializer=tf.truncated_normal(filter_shape, stddev=0.3, seed=self.seed), name='W')
-                        b = tf.get_variable(initializer=tf.constant(0.0, shape=[args.clwe_dim]), name='b')
+                        W = tf.compat.v1.get_variable(initializer=tf.random.truncated_normal(filter_shape, stddev=0.3, seed=self.seed), name='W')
+                        b = tf.compat.v1.get_variable(initializer=tf.constant(0.0, shape=[args.clwe_dim]), name='b')
                         conv = tf.nn.conv2d(
                                 X_char_embedded_data,
                                 W,
@@ -88,7 +98,7 @@ class Model:
                                     data_format='NHWC',
                                     name="CLWEpool")
                         pool_flat = tf.reshape(pooled,[-1, self.maxLen, args.clwe_dim],name='cnn_rs')
-                        pool_flat_d = tf.nn.dropout(x=pool_flat, keep_prob=1-self.emb_dropout, name='clwe_drop', seed=self.seed)
+                        pool_flat_d = tf.compat.v1.nn.dropout(x=pool_flat, keep_prob=1-self.emb_dropout, name='clwe_drop', seed=self.seed)
                         temp.append(pool_flat_d)
                 X_embedded_char = tf.concat([temp[0], temp[1], temp[2]],axis=2,name='X_embchar')
         return X_embedded_char
@@ -114,7 +124,7 @@ class Model:
         
         self.summery=summery
 
-        with tf.variable_scope(scopename) as scope:
+        with tf.compat.v1.variable_scope(scopename) as scope:
             self.infos1_w = tf.Variable(initial_value=1.0, name='infos1_w', trainable=True)
             self.infos2_w = tf.Variable(initial_value=1.0, name='infos2_w', trainable=True)
             self.infos3_w = tf.Variable(initial_value=1.0, name='infos3_w', trainable=True)
@@ -151,40 +161,40 @@ class Model:
             concat_for_fc, n_out = concat_fc(concat_for_fc, dim, args.fc_method, args.mlp_layer)
             self.X_embedded_concat = tf.reshape(concat_for_fc, [-1, self.maxLen, n_out], name='X_ec')
             
-            cell_fw = tf.contrib.rnn.BasicLSTMCell(num_units=args.hidden_size,
+            cell_fw = tf.compat.v1.nn.rnn_cell.BasicLSTMCell(num_units=args.hidden_size,
                                                        state_is_tuple=True)
-            cell_bw = tf.contrib.rnn.BasicLSTMCell(num_units=args.hidden_size, 
+            cell_bw = tf.compat.v1.nn.rnn_cell.BasicLSTMCell(num_units=args.hidden_size, 
                                                             state_is_tuple=True)
-            self.outputs, self.states = tf.nn.bidirectional_dynamic_rnn(
+            self.outputs, self.states = tf.compat.v1.nn.bidirectional_dynamic_rnn(
                                                     cell_fw, cell_bw,
                                                     self.X_embedded_concat,
                                                     sequence_length=self.X_len,
                                                     dtype=tf.float32)
             self.outputs_fw, self.outputs_bw = self.outputs
             
-            outputs_fw_t = tf.nn.dropout(x=self.outputs_fw, keep_prob=1-self.lstm_dropout, name='output_drop_fw', seed=self.seed)
-            outputs_bw_t = tf.nn.dropout(x=self.outputs_bw, keep_prob=1-self.lstm_dropout, name='output_drop_bw', seed=self.seed)
+            outputs_fw_t = tf.compat.v1.nn.dropout(x=self.outputs_fw, keep_prob=1-self.lstm_dropout, name='output_drop_fw', seed=self.seed)
+            outputs_bw_t = tf.compat.v1.nn.dropout(x=self.outputs_bw, keep_prob=1-self.lstm_dropout, name='output_drop_bw', seed=self.seed)
             self.outputs_concat=tf.concat([outputs_fw_t, outputs_bw_t], axis=2, name='out_c')
             
-            self.fc_outputs = tf.contrib.layers.fully_connected(
+            self.fc_outputs = tf.compat.v1.layers.dense(
                                 inputs=self.outputs_concat, num_outputs=args.num_class,
                                 activation_fn=None)
             self.logits = tf.reshape(self.fc_outputs, 
                                 [-1, self.maxLen, args.num_class], name='logits')
             self.weights = tf.sequence_mask(lengths=self.X_len, dtype=tf.float32, name='weights')
-            self.sequence_loss = tf.contrib.seq2seq.sequence_loss(
+            self.sequence_loss = tfa.seq2seq.sequence_loss(#tf.contrib.seq2seq.sequence_loss(
                                 logits=self.logits, targets=self.Y, weights=self.weights, name='seq_loss')
-            self.log_likelihood, self.transition_params = tf.contrib.crf.crf_log_likelihood(
+            self.log_likelihood, self.transition_params = tfa.text.crf_log_likelihood(#tf.contrib.crf.crf_log_likelihood(
                                                         self.logits, self.Y, self.X_len)
             self.loss=tf.reduce_mean(self.sequence_loss-args.loss_weight*self.log_likelihood, name='loss')
-            self.train = tf.train.AdagradOptimizer(learning_rate=self.lr).minimize(self.loss)
+            self.train = tf.compat.v1.train.AdagradOptimizer(learning_rate=self.lr).minimize(self.loss)
             self.prediction = tf.argmax(self.logits, axis=2, name='prediction')
 
             if args.tensorboard:
-                with tf.variable_scope('summeries'):
-                    tf.summary.scalar('loss',self.loss) # so train only
+                with tf.compat.v1.variable_scope('summeries'):
+                    tf.compat.v1.summary.scalar('loss',self.loss) # so train only
                 self.variable_summaries(self.outputs_concat_tmp)
-                self.summaryMerged = tf.summary.merge_all()
+                self.summaryMerged = tf.compat.v1.summary.merge_all()
 
         return self
 

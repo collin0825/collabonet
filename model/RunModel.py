@@ -4,6 +4,9 @@ import numpy as np
 from ops.inputData import *
 from ops.ops import *
 
+import tensorflow_addons as tfa  
+
+
 class RunModel:
     def __init__(self, model, args, ID2wordVecIdx, ID2char, expName, m_name, m_train='train', m_dev='dev', m_test='test'):
         self.model=model
@@ -136,7 +139,7 @@ class RunModel:
             logitsPridict = sess.run(self.model.logits, feed_dict=feed_dict2)
             
             for sentence in logitsPridict:
-                viterbi, viterbi_score=tf.contrib.crf.viterbi_decode(sentence,trsPara)
+                viterbi, viterbi_score=tfa.text.viterbi_decode(sentence,trsPara) #tf.contrib.crf.viterbi_decode()
                 predictionResult.append(viterbi)
                 viterbi_scoreList.append(viterbi_score)
             predictionWOCRFResult.extend(sess.run(self.model.prediction, feed_dict=feed_dict2))

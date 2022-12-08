@@ -169,7 +169,7 @@ if __name__ == '__main__':
             if modelDict[dataSet]['early_stop']:
                 continue
             if modelDict[dataSet]['args'].tensorboard:
-                tbWriter = tf.summary.FileWriter('./modelSave/'+expName+'/'+m_name+'/train', sess.graph)
+                tbWriter = tf.compat.v1.summary.FileWriter('./modelSave/'+expName+'/'+m_name+'/train', sess.graph)
             else: tbWriter = None
             
             print('===='+m_name.upper()+"_MODEL Training=====")
@@ -284,7 +284,7 @@ if __name__ == '__main__':
             loader.restore(sess, tf.compat.v1.train.latest_checkpoint(loadpath)) 
             
             if modelDict[dataSet]['args'].tensorboard:
-                tbWriter = tf.summary.FileWriter('test')
+                tbWriter = tf.compat.v1.summary.FileWriter('test')
             else: tbWriter = None
             
             (t_predictionResult, t_prfValResult, t_prfValWOCRFResult,
