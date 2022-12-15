@@ -6,28 +6,28 @@ import numpy as np
 import csv
 
 def setExpName(savePath='modelSave/'):
-    timeNow=time.strftime("%Y%m%d%H%M")
+    timeNow=time.strftime("%Y%m%d")#%H%M
     timeNow_edited=str(timeNow)
     print(timeNow_edited)
 
-    suffix=0
-    while 1: # making foldr code : if same name exists -> add [_num]
-        if suffix>10: # for error treating 
-            break
+    # suffix=0
+    # while 1: # making foldr code : if same name exists -> add [_num]
+    #     if suffix>10: # for error treating 
+    #         break
             
-        try:
-            if suffix==0:
-                os.mkdir(savePath+timeNow_edited)
-            else:
-                os.mkdir(savePath+timeNow_edited+'_'+str(suffix))
-                timeNow_edited=timeNow_edited+'_'+str(suffix)
-            break
-        except OSError as e:
-            if e.errno == errno.EEXIST: # if file exists! Python2.7 doesn't support file exist exception so need to use this
-                print(timeNow_edited+'_'+str(suffix)+' Directory exists! not created.')
-                suffix+=1
-            else:
-                raise
+    #     try:
+    #         if suffix==0:
+    #             os.mkdir(savePath+timeNow_edited)
+    #         else:
+    #             os.mkdir(savePath+timeNow_edited+'_'+str(suffix))
+    #             timeNow_edited=timeNow_edited+'_'+str(suffix)
+    #         break
+    #     except OSError as e:
+    #         if e.errno == errno.EEXIST: # if file exists! Python2.7 doesn't support file exist exception so need to use this
+    #             print(timeNow_edited+'_'+str(suffix)+' Directory exists! not created.')
+    #             suffix+=1
+    #         else:
+    #             raise
             
     return timeNow_edited
 

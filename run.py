@@ -21,6 +21,7 @@ from model.RunModel import *
 
 if __name__ == '__main__':
 
+
     #Hyper Params
     parser = argparse.ArgumentParser()
     parser.add_argument('--guidee_data', type=str, help='data name', default='name')
@@ -73,6 +74,7 @@ if __name__ == '__main__':
     gpu_config = tf.compat.v1.ConfigProto(device_count={'GPU':1})  # only use GPU no.1
     gpu_config.gpu_options.allow_growth = True # only use required resource(memory)
     gpu_config.gpu_options.per_process_gpu_memory_fraction = 1 # restrict to 100%
+    print(tf.config.list_physical_devices('GPU'))
     
     ID2wordVecIdx, wordVec2LineNo, wordEmbedding = input_wordVec()
     ID2char=pickle.load(open('data/ID2char.pickle','rb'))
@@ -138,14 +140,14 @@ if __name__ == '__main__':
 
         dataNames.append(dataSet)
         
-        try:
-            os.mkdir('./modelSave/'+expName+'/'+modelDict[dataSet]['m_name'])
-        except OSError as e:
-            if e.errno == errno.EEXIST: # if file exists! Python2.7 doesn't support file exist exception so need to use this
-                print('./modelSave/'+expName+'/'+modelDict[dataSet]['m_name']+' Directory exists! not created.')
-                suffix+=1
-            else:
-                raise
+        # try:
+        #     os.mkdir('./modelSave/'+expName+'/'+modelDict[dataSet]['m_name'])
+        # except OSError as e:
+        #     if e.errno == errno.EEXIST: # if file exists! Python2.7 doesn't support file exist exception so need to use this
+        #         print('./modelSave/'+expName+'/'+modelDict[dataSet]['m_name']+' Directory exists! not created.')
+        #         suffix+=1
+        #     else:
+        #         raise
         
         modelDict[dataSet]['runner']=RunModel(model=modelDict[dataSet]['model'], args=modelDict[dataSet]['args'], 
                         ID2wordVecIdx=ID2wordVecIdx, ID2char=ID2char, 
@@ -157,9 +159,17 @@ if __name__ == '__main__':
         np.random.seed(seedV)
         tf.random.set_seed(seedV)
         sess.run(tf.compat.v1.global_variables_initializer())
-        #saver = tf.compat.v1.train.Saver(max_to_keep=10000)
-        #loader = tf.compat.v1.train.Saver(max_to_keep=10000)
+        saver = tf.compat.v1.train.Saver(max_to_keep=10000,defer_build=True,allow_empty=True,save_relative_paths=True)
+        # build you graph here
+        saver.build()
+        #graph.finalize()
+        loader = tf.compat.v1.train.Saver(max_to_keep=10000,defer_build=True,allow_empty=True,save_relative_paths=True)
+        loader.build()
         for epoch_idx in range(args.epoch*len(dataNames)):
+            # loader = tf.compat.v1.train.Saver(max_to_keep=10000,defer_build=True,allow_empty=True)
+            # saver = tf.compat.v1.train.Saver(max_to_keep=10000,defer_build=True,allow_empty=True) 
+            # saver.build()
+            # loader.build()
             dataSet = dataNames[epoch_idx%len(dataNames)]
             if epoch_idx%len(dataNames)==0:
                 if args.pretrained != 0:
@@ -190,20 +200,21 @@ if __name__ == '__main__':
                 intOuts[m_train]=list()
                 intOuts[m_dev]=list()
                 intOuts[m_test]=list()
+
                 for d_sub in modelDict:
                     if d_sub==dataSet:
                         continue
                     else:
-                        loadpath = './modelSave/'+str(args.pretrained)+'/'+d_sub+'/'
-                        loader = tf.compat.v1.train.Saver(max_to_keep=10000)
-                        loader.restore(sess, tf.compat.v1.train.latest_checkpoint(loadpath))
+                        loadpath = 'G:\\我的雲端硬碟\\2022知識圖計畫\\collabonet-master\\modelSave\\'+str(args.pretrained)+'\\'+d_sub+'\\'
+
+                        loader.restore(sess, tf.compat.v1.train.init_from_checkpoint(loadpath))#latest_checkpoint
 
                         intOuts[m_train].append(modelDict[d_sub]['runner'].info1epoch(m_train, modelDict[dataSet]['runner'], sess))
                         intOuts[m_dev].append(modelDict[d_sub]['runner'].info1epoch(m_dev, modelDict[dataSet]['runner'], sess))
                         intOuts[m_test].append(modelDict[d_sub]['runner'].info1epoch(m_test, modelDict[dataSet]['runner'], sess))
                 
-                loadpath = './modelSave/'+str(args.pretrained)+'/'+dataSet+'/'
-                loader.restore(sess, tf.compat.v1.train.latest_checkpoint(loadpath))
+                loadpath = 'G:\\我的雲端硬碟\\2022知識圖計畫\\collabonet-master\\modelSave\\'+str(args.pretrained)+'\\'+dataSet+'\\'#'./modelSave/'
+                loader.restore(sess, tf.compat.v1.train.init_from_checkpoint(loadpath))#latest_checkpoint
             
             elif ((epoch_idx / len(dataNames)) != 0):
                 if args.pretrained != 0:
@@ -215,14 +226,15 @@ if __name__ == '__main__':
                         if d_sub==dataSet:
                             continue
                         else:
-                            loadpath = './modelSave/'+expName+'/'+d_sub+'/'
-                            loader.restore(sess, tf.compat.v1.train.latest_checkpoint(loadpath))
+                            loadpath ='G:\\我的雲端硬碟\\2022知識圖計畫\\collabonet-master\\modelSave\\' +expName+'\\'+d_sub+'\\'
+                            loader.restore(sess, tf.compat.v1.train.init_from_checkpoint(loadpath))#latest_checkpoint
                             intOuts[m_train].append(modelDict[d_sub]['runner'].info1epoch(m_train, modelDict[dataSet]['runner'], sess))
                             intOuts[m_dev].append(modelDict[d_sub]['runner'].info1epoch(m_dev, modelDict[dataSet]['runner'], sess))
                             intOuts[m_test].append(modelDict[d_sub]['runner'].info1epoch(m_test, modelDict[dataSet]['runner'], sess))
                     
-                loadpath = './modelSave/'+expName+'/'+dataSet+'/'
-                loader.restore(sess, tf.compat.v1.train.latest_checkpoint(loadpath))
+                loadpath = 'G:\\我的雲端硬碟\\2022知識圖計畫\\collabonet-master\\modelSave\\'+expName+'\\'+dataSet+'\\'
+                print(loadpath)
+                loader.restore(sess, tf.compat.v1.train.init_from_checkpoint(loadpath))#latest_checkpoint
             
             (l, sl, tra, trsPara) = modelDict[dataSet]['runner'].train1epoch(
                                                                 sess, batch_idx, infoInput=intOuts, tbWriter=tbWriter)
@@ -234,7 +246,6 @@ if __name__ == '__main__':
              test_x, test_ans, test_len) = modelDict[dataSet]['runner'].dev1epoch(m_test, trsPara, sess, infoInput=intOuts, epoch=epoch_idx)
 
             modelDict[dataSet]['f1ValList'].append(t_prfValResult[2])
-            saver = tf.compat.v1.train.Saver(max_to_keep=10000)  
             saver.save(sess, './modelSave/'+expName+'/'+m_name+'/modelSaved')
             pickle.dump(trsPara, open('./modelSave/'+expName+'/'+m_name+'/trs_param.pickle','wb'))
             
@@ -272,7 +283,7 @@ if __name__ == '__main__':
             tf.random.set_seed(seedV)
             sess.run(tf.compat.v1.global_variables_initializer())
             loader = tf.compat.v1.train.Saver(max_to_keep=10000)
-            loadpath = './modelSave/'+expName+'/'+m_name+'/'
+            loadpath = 'G:\\我的雲端硬碟\\2022知識圖計畫\\collabonet-master\\modelSave\\'+expName+'\\'+m_name+'\\'
             
             if args.pretrained != 0:
                 intOuts = dict()
@@ -281,7 +292,7 @@ if __name__ == '__main__':
                 intOuts = None
 
             trsPara = pickle.load(open(loadpath+'trs_param.pickle','rb'))
-            loader.restore(sess, tf.compat.v1.train.latest_checkpoint(loadpath)) 
+            loader.restore(sess, tf.compat.v1.train.init_from_checkpoint(loadpath)) #latest_checkpoint
             
             if modelDict[dataSet]['args'].tensorboard:
                 tbWriter = tf.compat.v1.summary.FileWriter('test')

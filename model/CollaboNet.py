@@ -177,8 +177,8 @@ class Model:
             self.outputs_concat=tf.concat([outputs_fw_t, outputs_bw_t], axis=2, name='out_c')
             
             self.fc_outputs = tf.compat.v1.layers.dense(
-                                inputs=self.outputs_concat, num_outputs=args.num_class,
-                                activation_fn=None)
+                                inputs=self.outputs_concat, units=args.num_class,
+                                activation=None)#
             self.logits = tf.reshape(self.fc_outputs, 
                                 [-1, self.maxLen, args.num_class], name='logits')
             self.weights = tf.sequence_mask(lengths=self.X_len, dtype=tf.float32, name='weights')
@@ -202,10 +202,10 @@ class Model:
     def variable_summaries(self, var): #Attach a lot of summaries to a Tensor (for TensorBoard visualization).
         with tf.name_scope('VarSummaries'):
             mean = tf.reduce_mean(var)
-            tf.summary.scalar('mean', mean)
+            tf.compat.v1.summary.scalar('mean', mean)
             with tf.name_scope('stddev'):
               stddev = tf.sqrt(tf.reduce_mean(tf.square(var - mean)))
-            tf.summary.scalar('stddev', stddev)
-            tf.summary.scalar('max', tf.reduce_max(var))
-            tf.summary.scalar('min', tf.reduce_min(var))
-            tf.summary.histogram('histogram', var)
+            tf.compat.v1.summary.scalar('stddev', stddev)
+            tf.compat.v1.summary.scalar('max', tf.reduce_max(var))
+            tf.compat.v1.summary.scalar('min', tf.reduce_min(var))
+            tf.compat.v1.summary.histogram('histogram', var)

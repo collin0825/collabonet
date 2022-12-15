@@ -28,17 +28,18 @@ def wiki_loadWordVec(path,vocaPath="wordvec/vocab.txt"):
     vectList=list()
     
     vectList.append(np.array([0]*200)) #pad 
-    with open(path,'r') as vecFile:#rb
+    with open(path,'rb') as vecFile:#rb
         for line in vecFile:
-            vecValRow=line.split()
-            vect=map(float, vecValRow)
+            vecValRow=line.decode().split()
+            vect=list(map(float, vecValRow))
             vectList.append(vect)
+            #print(vectList.shape)
     vectList.append(np.random.rand(200))#UNK
-    wordVecArrayTmp=np.asarray(vectList,dtype='object')#float32
+    wordVecArrayTmp=np.asarray(vectList,dtype='float32')#float32/object
     
-    with open(vocaPath,'r') as vocaFile:#rb
+    with open(vocaPath,'rb') as vocaFile:#rb
         for itera, line in enumerate(vocaFile):
-            wordVec2LineNo[line.strip('\n')]=itera+1 #pad
+            wordVec2LineNo[line.decode().strip('\n')]=itera+1 #pad
     wordVec2LineNo['<UNK>']=itera+2
     wordEmbedding=wordVecArrayTmp
     embedding_dim=len(wordVecArrayTmp[0])
@@ -68,10 +69,12 @@ def char_padding(inputs, voca_size, embedding_dim, wordMaxLen, charMaxLen):
 def embedding_lookup(inputs, voca_size, initializer, reuse=False, trainable=True, scope='Embedding'):
     with tf.compat.v1.variable_scope(scope, reuse=reuse) as scope:
         embedding_tablePAD = tf.compat.v1.get_variable("embedPAD",
-                        initializer=initializer[0:1], trainable=False, dtype=tf.float32)
+                        initializer=initializer[0:1], trainable=False, dtype=tf.float32)#
         embedding_tableLast = tf.compat.v1.get_variable("embedLast",
-                        initializer=initializer[1:], trainable=trainable, dtype=tf.float32)
+                        initializer=initializer[1:], trainable=trainable, dtype=tf.float32)#
         embedding_table=tf.concat([embedding_tablePAD,embedding_tableLast],axis=0,name="embed")
+        #embedding_table=tf.convert_to_tensor(embedding_table, dtype=tf.float32)
+        #inputs=tf.convert_to_tensor(inputs, dtype=tf.float32)
         inputs_embed = tf.nn.embedding_lookup(embedding_table, inputs) 
         
         return inputs_embed, embedding_table
